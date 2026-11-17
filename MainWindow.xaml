@@ -1,0 +1,160 @@
+<Window x:Class="ClasificadorComentarios.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Moderación de comentarios" Height="680" Width="1100" MinWidth="800" MinHeight="500"
+        Background="#F5F6F8" WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI" FontSize="13">
+
+    <Window.Resources>
+        <!-- Tarjeta-filtro: el Foreground es el color de acento -->
+        <Style x:Key="CardFiltro" TargetType="RadioButton">
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="borde" Background="White" CornerRadius="8" BorderThickness="2"
+                                BorderBrush="#E2E5EA" Padding="18,12" MinWidth="150">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="borde" Property="BorderBrush"
+                                        Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="borde" Property="Background" Value="#FAFBFC" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Celdas de la tabla -->
+        <Style x:Key="Celda" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="8,8" />
+        </Style>
+        <Style x:Key="CeldaCentro" TargetType="TextBlock" BasedOn="{StaticResource Celda}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="CeldaMotivo" TargetType="TextBlock" BasedOn="{StaticResource Celda}">
+            <Setter Property="Foreground" Value="#6B7280" />
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F9FAFB" />
+            <Setter Property="Foreground" Value="#6B7280" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="8,10" />
+            <Setter Property="BorderBrush" Value="#E2E5EA" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#EEF2FF" />
+                    <Setter Property="Foreground" Value="#1F2937" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Encabezado -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,16">
+            <Button DockPanel.Dock="Right" Content="Abrir otro archivo…" Padding="14,6"
+                    VerticalAlignment="Center" Click="AbrirArchivo_Click" />
+            <StackPanel>
+                <TextBlock Text="Moderación de comentarios" FontSize="22" FontWeight="SemiBold" Foreground="#1F2937" />
+                <TextBlock x:Name="TxtArchivo" Foreground="#6B7280" Margin="0,2,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Conteos / filtros -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,16">
+            <RadioButton Style="{StaticResource CardFiltro}" Tag="todos" IsChecked="True"
+                         Foreground="#374151" Checked="Filtro_Checked">
+                <StackPanel>
+                    <TextBlock x:Name="TxtTodos" FontSize="26" FontWeight="Bold" />
+                    <TextBlock Text="Todos" Foreground="#6B7280" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource CardFiltro}" Tag="ok" Foreground="#2E7D32" Checked="Filtro_Checked">
+                <StackPanel>
+                    <TextBlock x:Name="TxtOk" FontSize="26" FontWeight="Bold" />
+                    <TextBlock Text="Ok" Foreground="#6B7280" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource CardFiltro}" Tag="spam" Foreground="#C62828" Checked="Filtro_Checked">
+                <StackPanel>
+                    <TextBlock x:Name="TxtSpam" FontSize="26" FontWeight="Bold" />
+                    <TextBlock Text="Spam" Foreground="#6B7280" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource CardFiltro}" Tag="revisar" Foreground="#EF6C00" Checked="Filtro_Checked">
+                <StackPanel>
+                    <TextBlock x:Name="TxtRevisar" FontSize="26" FontWeight="Bold" />
+                    <TextBlock Text="Revisar" Foreground="#6B7280" />
+                </StackPanel>
+            </RadioButton>
+        </StackPanel>
+
+        <!-- Detalle -->
+        <DataGrid x:Name="Grid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
+                  RowHeaderWidth="0" CanUserResizeRows="False" AlternationCount="2"
+                  AlternatingRowBackground="#FAFBFC" HorizontalGridLinesBrush="#EEF0F3"
+                  Background="White" BorderBrush="#E2E5EA"
+                  CanUserAddRows="False" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="#" Binding="{Binding Comentario.Id}" Width="50"
+                                    ElementStyle="{StaticResource CeldaCentro}" />
+                <DataGridTextColumn Header="Usuario" Binding="{Binding Comentario.Usuario}" Width="140"
+                                    ElementStyle="{StaticResource Celda}" />
+                <DataGridTextColumn Header="Fecha" Width="130"
+                                    Binding="{Binding Comentario.Fecha, StringFormat='dd/MM/yyyy HH:mm'}"
+                                    ElementStyle="{StaticResource Celda}" />
+                <DataGridTextColumn Header="Comentario" Binding="{Binding TextoMostrado}" Width="*"
+                                    ElementStyle="{StaticResource Celda}" />
+                <DataGridTextColumn Header="Rep." Binding="{Binding Comentario.Reportes}" Width="55"
+                                    ElementStyle="{StaticResource CeldaCentro}" />
+                <DataGridTemplateColumn Header="Categoría" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="10" Padding="10,2" HorizontalAlignment="Left"
+                                    VerticalAlignment="Center" Margin="8,4">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#E8F5E9" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Categoria}" Value="Spam">
+                                                <Setter Property="Background" Value="#FDE7E7" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Categoria}" Value="Revisar">
+                                                <Setter Property="Background" Value="#FFF3E0" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding Categoria}" FontWeight="SemiBold" />
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Motivo" Binding="{Binding MotivosTexto}" Width="280"
+                                    ElementStyle="{StaticResource CeldaMotivo}" />
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>
