@@ -31,7 +31,7 @@ public static class Clasificador
         var texto = (c.Texto ?? "").Trim();
         var minus = texto.ToLowerInvariant();
 
-        // Clasificación automática por medio de puntos: spam u ok
+        // ---- Señales de spam (con puntos) ----
         var puntos = 0;
         var spam = new List<string>();
 
@@ -74,18 +74,25 @@ public static class Clasificador
             return new Resultado(c, Categoria.Spam, spam);
         }
 
-        // Clasificación por señales de alerta: revisar u ok
+        // ---- Señales para revisión humana (cada una con su gravedad, 1 a 5) ----
         var revisar = new List<string>();
+        var gravedad = 0;
 
-        if (texto.Length == 0) revisar.Add("Comentario vacío");
-        if (Insultos.Any(minus.Contains)) revisar.Add("Posible insulto o lenguaje ofensivo");
-        if (Amenazas.Any(minus.Contains)) revisar.Add("Posible amenaza");
-        if (Telefono.IsMatch(texto)) revisar.Add("Contiene un número de teléfono (dato personal)");
-        if (minus.Contains("comentario de prueba")) revisar.Add("Parece un comentario de prueba");
-        if (reportes != null) revisar.Add(reportes);
-        revisar.AddRange(spam); // spam que no alcanza el umbral, pero que puede ser sospechoso
+        void Marcar(string motivo, int nivel)
+        {
+            revisar.Add(motivo);
+            gravedad = Math.Max(gravedad, nivel); // la gravedad del comentario es la de su señal más grave
+        }
 
-        if (revisar.Count > 0) return new Resultado(c, Categoria.Revisar, revisar);
+        if (Amenazas.Any(minus.Contains)) Marcar("Posible amenaza", 5);
+        if (Insultos.Any(minus.Contains)) Marcar("Posible insulto o lenguaje ofensivo", 4);
+        if (Telefono.IsMatch(texto)) Marcar("Contiene un número de teléfono (dato personal)", 3);
+        if (reportes != null) Marcar(reportes, 3);
+        foreach (var señal in spam) Marcar(señal, 2); // spam "débil": no alcanzó el umbral
+        if (texto.Length == 0) Marcar("Comentario vacío", 1);
+        if (minus.Contains("comentario de prueba")) Marcar("Parece un comentario de prueba", 1);
+
+        if (revisar.Count > 0) return new Resultado(c, Categoria.Revisar, revisar, gravedad);
 
         return new Resultado(c, Categoria.Ok, new[] { "Sin señales de alerta" });
     }
